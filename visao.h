@@ -29,8 +29,9 @@ void desenhar_asteroide(CorpoCeleste *, CorpoCeleste *, double);
 void renderizar(bool m);
 bool get_renderizar();
 
-void iniciar_anel_saturno();
-void destruir_anel_saturno();
+void iniciar_colapso_anel_saturno();
+void terminar_colapso_anel_saturno();
+bool em_colapso_anel_saturno();
 bool anel_saturno_ativo();
 void desenhar_mouse_cursor(int x, int y, int l, int a, double dimensao);
 

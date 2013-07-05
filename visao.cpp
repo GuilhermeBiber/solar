@@ -383,10 +383,10 @@ void ilumina_sol()
 
 // faz a iluminação dos demais astros
 // retorna a posição da luz para o SOL
-void ilumina_astro()
+void ilumina_astros()
 {
     GLfloat posicaoLuz[4]={0.0, 0.0, 0.0, 1.0};
-    glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz);
+   glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz);
 
     GLfloat mat_emission[] = {0.0, 0.0, 0.0, 0.0};
     glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
@@ -448,7 +448,6 @@ void desenhar_astro(CorpoCeleste *astro,
         // afasta o astro de sua orbita para evitar colisão visual
         // garante um afastamento mínimo
         double dist = afastamento + astro->dist + astro->raio;
-        RENDER(ilumina_astro());
         RENDER(desenha_orbita_circular(astro, dist));
         // posiciona o planeta na órbita correta
         glRotated(angulo_translacao(astro), 0.0, 1.0, 0.0);
@@ -471,10 +470,13 @@ void desenhar_sol(CorpoCeleste *astro)
         return;
     // posiciona o planeta na órbita correta
     glRotated(angulo_translacao(astro), 0.0, 1.0, 0.0);
-    CALCULO(setPosition(astro->pos));
     // desenha a esfera com iluminação
-    RENDER(ilumina_sol());
-    RENDER(desenhar_corpo_celeste(astro, angulo_rotacao(astro), 180));
+    if(deve_renderizar) {
+        ilumina_sol();
+        desenhar_corpo_celeste(astro, angulo_rotacao(astro), 180);
+        ilumina_astros();
+    } else
+        setPosition(astro->pos);
     // Desenha cada satélide (recursão)
     desenhar_satelites(astro);
 }
@@ -521,13 +523,13 @@ void desenha_febe(CorpoCeleste *astro,
         glRotated(90, 1.0, 0.0, 0.0);
         glRotated(15, 0.0, 1.0, 1.0);
         double aTransl = -angulo_translacao(astro);
+        RENDER(desenha_obita_eliptica(astro, raioX, raioY, true));
         glPushMatrix();
             glTranslated(cos(aTransl)*raioX, sin(aTransl)*raioY, 0.0);
             glRotated(-90, 1.0, 0.0, 0.0);
             CALCULO(setPosition(astro->pos));
             RENDER(desenhar_corpo_celeste(astro, angulo_rotacao(astro), 20));
         glPopMatrix();
-        RENDER(desenha_obita_eliptica(astro, raioX, raioY, true));
     glPopMatrix();
 
 }
@@ -556,15 +558,15 @@ void desenha_hiperion(CorpoCeleste *astro,
         double aRotacao = angulo_rotacao(astro) + mov_hip.drot;
         raioX = raioX * mov_hip.raioT;
         // desenha a lua em órbita elíptica
+        RENDER(desenha_obita_eliptica(astro, raioX, raioY,
+                get_em_foco() != principal));
+        // desenha o satélite
         glPushMatrix();
             glTranslated(cos(aTransl)*raioX, sin(aTransl)*raioY, 0.0);
             glRotated(-90, 1.0, 0.0, 0.0);
             CALCULO(setPosition(astro->pos));
             RENDER(desenhar_corpo_celeste(astro, aRotacao, 30));
         glPopMatrix();
-        // desenha a órbita
-        RENDER(desenha_obita_eliptica(astro, raioX, raioY,
-                get_em_foco() != principal));
     glPopMatrix();
 }
 
@@ -596,13 +598,14 @@ bool anel_em_colapso = false;
 double dia_colapso = 0.0;
 double duracao_colapso = 3;
 
-void iniciar_anel_saturno()
-{
+bool em_colapso_anel_saturno() { return anel_em_colapso; }
+void colapso_anel_saturno(bool c) { anel_em_colapso = c; }
+
+void terminar_colapso_anel_saturno() {
     anel_em_colapso = false;
     anel_alfa_color = 1.0;
 }
-
-void destruir_anel_saturno()
+void iniciar_colapso_anel_saturno()
 {
     anel_em_colapso = true;
     dia_colapso = get_dia();
@@ -638,7 +641,7 @@ double desenha_aneis(CorpoCeleste *astro)
                 double reducao = (get_dia() - dia_colapso) / duracao_colapso;
                 anel_alfa_color = 1.0 - reducao;
             } else {
-                anel_em_colapso = false;
+                terminar_colapso_anel_saturno();
                 anel_alfa_color = 0.0;
             }
         }
@@ -691,6 +694,6 @@ void configura_saturno(CorpoCeleste *sol)
     sol->satelite[SATURNO].customizar = &desenha_aneis;
     sol->satelite[SATURNO].satelite[FEBE].desenhar = &desenha_febe;
     sol->satelite[SATURNO].satelite[HIPERION].desenhar = &desenha_hiperion;
-    iniciar_anel_saturno();
+    terminar_colapso_anel_saturno();
     inicia_movimento_aleatorio_hiperion();
 }

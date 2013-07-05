@@ -755,14 +755,22 @@ bool verifica_colisao_anel_saturno(CorpoCeleste *astro)
     //Verifica se o asteroide intercepta o plano
     //!!! pode simplificar!!!
     //---if (projecao/normaPlano < astro->raio)
-    if(fabs(astro->pos[1]) < astro->raio)
-        // verifica se a distância entre o centro do asteroide
-        // e o centro de saturno for menor que o raio do asteroide
-        // menos o raio do anel
-        if (distPonto(astro->pos, sol.satelite[SATURNO].pos) <
-                astro->raio + raio_anel) {
-            destruir_anel_saturno();
+    double dist = fabs(astro->pos[1]);
+    if( dist < astro->raio) {
+        // define o ponto de projeção do centro do asteróide no plano
+        double pp[3];
+        pp[0] = astro->pos[0];
+        pp[1] = 0;
+        pp[2] = astro->pos[2];
+        // calcula o raio do círculo projeto pela esfera no plano
+        double raioProj = sqrt(pow(astro->raio, 2)+pow(dist,2));
+        // verifica se a distância entre o centro do cúrculo projetado
+        // e o centro de saturno for menor que a soma dos raios
+        if (distPonto(pp, sol.satelite[SATURNO].pos) <
+                raioProj + raio_anel) {
+            iniciar_colapso_anel_saturno();
         }
+    }
     return false;
 }
 
@@ -772,6 +780,13 @@ void continua_explosao(CorpoCeleste *astro)
         idleExplosion(&(astro->explosao), tempo);
     for (int i = 0; i < astro->satelites; i++)
         continua_explosao(&(astro->satelite[i]));
+}
+
+void colisao()
+{
+    CorpoCeleste *colide_com = verifica_colisao(&sol, asteroide);
+    if (colide_com == NULL && !em_colapso_anel_saturno())
+        verifica_colisao_anel_saturno(asteroide);
 }
 
 //----------------------------------------------------------------------------
@@ -832,9 +847,7 @@ void calcular()
         else
             t_asteroide.setText("Asteroide...");
         // verifica a colisão com outros astros
-        CorpoCeleste *colide_com = verifica_colisao(&sol, asteroide);
-        if (colide_com == NULL)
-            verifica_colisao_anel_saturno(asteroide);
+        colisao();
     } else {
         t_asteroide.setText("");
     }
@@ -960,7 +973,7 @@ void teclado (unsigned char key, int x, int y)
         case 'r':
         case 'R':
             ativa(&sol);
-            iniciar_anel_saturno();
+            terminar_colapso_anel_saturno();
             glutPostRedisplay();
             break;
         case 'e':
