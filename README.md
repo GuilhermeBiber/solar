@@ -34,55 +34,55 @@ de um diretório que contenha o subdiretório “texturas” com os bitmaps usad
 
 ### Como usar
 
-Teclas:
-    l: Liga/Desliga Luz
-    p: Pausa/Continua a movimentação (passagem do tempo)
-    q: Aumenta escala de raio dos planetas
-    a: Diminui escala de raio dos planetas
-    w: Aumenta distância dos planetas
-    s: Diminui distância dos planetas
-    z: Volta para escala padrão
-    x: Tamanho "ampliado"
-    o: Liga/Desliga órbitas
-    r: Volta os planetas explodidos
-    e: Ativa asteroide
-    d: Dispara/termina asteroide
-    c: Termina asteroide
-    t: Liga/Desliga textura
-    j: Finaliza programa
+- Teclas:
+ - l: Liga/Desliga Luz
+ - p: Pausa/Continua a movimentação (passagem do tempo)
+ - q: Aumenta escala de raio dos planetas
+ - a: Diminui escala de raio dos planetas
+ - w: Aumenta distância dos planetas
+ - s: Diminui distância dos planetas
+ - z: Volta para escala padrão
+ - x: Tamanho "ampliado"
+ - o: Liga/Desliga órbitas
+ - r: Volta os planetas explodidos
+ - e: Ativa asteroide
+ - d: Dispara/termina asteroide
+ - c: Termina asteroide
+ - t: Liga/Desliga textura
+ - j: Finaliza programa
 
 
-Mouse:
-    Botão:
-        Direito: Mover câmera
-        Esquerdo: Atirar asteroide e também mover câmera
-        Meio: Surpresinha ;)
-    Rodar botão do meio:
-        Para frente: Aumenta zoom
-        Para trás: Diminui zoom
+- Mouse:
+ - Botão:
+  - Direito: Mover câmera
+  - Esquerdo: Atirar asteroide e também mover câmera
+  - Meio: Surpresinha ;)
+ - Rodar botão do meio:
+  - Para frente: Aumenta zoom
+  - Para trás: Diminui zoom
 
-Setas:
-    Cima: Aumenta zoom
-    Baixo: Diminui zoom
-    Direita: Diminui tempo
-    Esquerda: Aumenta tempo
-    
-Focar:
-    1: Sol
-    2: Mercúrio
-    3: Vênus
-    4: Terra
-    !: Lua
-    5: Marte
-    6: Júpiter
-    7: Saturno
-    @: Titan
-    #: Febe
-    $: Hiperion
-    8: Urano
-    9: Netuno
-    0: Plutão
-    -: Asteroide
+- Setas:
+ - Cima: Aumenta zoom
+ - Baixo: Diminui zoom
+ - Direita: Diminui tempo
+ - Esquerda: Aumenta tempo
+ 
+- Focar:
+ - 1: Sol
+ - 2: Mercúrio
+ - 3: Vênus
+ - 4: Terra
+ - !: Lua
+ - 5: Marte
+ - 6: Júpiter
+ - 7: Saturno
+ - @: Titan
+ - #: Febe
+ - $: Hiperion
+ - 8: Urano
+ - 9: Netuno
+ - 0: Plutão
+ - -: Asteroide
 
 ### AUTHORS
 > ###### Guilherme Brandão Biber Sampaio <guilhermebiber@gmail.com>
