@@ -21,16 +21,42 @@ utilizando-se o compilador GCC e a biblioteca “freeglut”.
 Sua compatibilidade foi testada no Windows 7 (MinGW), 
 OpenSuse 12.3 e Ubuntu 11.04. 
 Para a compilação e “linkedição” no Linux, existe o programa “make.sh” 
-(baseado na saída de console  construção do projeto do Eclipse)
-. 
+(baseado na saída de console  construção do projeto do Eclipse). 
 
 Obviamente, as bibliotecas do OpenGL e o “freeglut” devem estar instaladas 
-para a criação do executável. 
+para a criação do executável.  
+
+No OpenSuse 12.3:
+
+```bash
+sudo zypper install freeglut-devel make gcc-c++
+```
+No Ubuntu:
+
+```bash
+sudo apt-get install freeglut3 freeglut3-dev make g++
+```
+
 Para o Windows, o executável foi “linkado” de forma estática e 
-deve funcionar mesmo sem o “runtime” do “freeglut.dll”. 
+deve funcionar mesmo sem o “runtime” do “freeglut.dll”.
+Mesmo assim, o arquivo se encontra na pasta "win32".
+Para maiores informações, existem vários tutoriais na Internet.
+
+Sugestões:
+
+[http://www.transmissionzero.co.uk/computing/using-glut-with-mingw/](http://www.transmissionzero.co.uk/computing/using-glut-with-mingw/)
+
+[http://www.ntu.edu.sg/home/ehchua/programming/opengl/HowTo_OpenGL_C.html](http://www.ntu.edu.sg/home/ehchua/programming/opengl/HowTo_OpenGL_C.html)
+ 
 Para a carga das texturas, que é opcional, 
 o programa deve ser executado partindo-se 
 de um diretório que contenha o subdiretório “texturas” com os bitmaps usados. 
+
+Para compilação e criação do executável no Linux:
+
+```bash
+make
+```
 
 ### Como usar
 
