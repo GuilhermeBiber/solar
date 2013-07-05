@@ -32,5 +32,8 @@ bool get_renderizar();
 void iniciar_anel_saturno();
 void destruir_anel_saturno();
 bool anel_saturno_ativo();
+void desenhar_mouse_cursor(int x, int y, int l, int a, double dimensao);
+
+#define FATOR_ANEL_SATURNO    2.05
 
 #endif /* VISAO_H_ */

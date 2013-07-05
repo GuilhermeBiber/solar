@@ -70,10 +70,10 @@ void Texto::draw()
 
 void Texto::draw2D()
 {
-	// Salva o sistema de coordenadas de proje��o
+	// Salva o sistema de coordenadas de projeção
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
-		// Zera o sistema de coordenadas de proje��o
+		// Zera o sistema de coordenadas de projeção
 		glLoadIdentity();
 		// Salva sistema de coordenadas do modelo
 		glMatrixMode(GL_MODELVIEW);
@@ -82,7 +82,7 @@ void Texto::draw2D()
 			glLoadIdentity();
 			draw();
 		glPopMatrix();
-	// Retorna o sistema de coordenadas de proje��o
+	// Retorna o sistema de coordenadas de projeção
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	// retonra para a matriz de modelo

@@ -158,6 +158,52 @@ void movimento_hiperion()
             dmov_hip.raioT, omov_hip.raioT, mmov_hip.raioT, tempo);
 }
 
+void glBegin2D(int l, int a)
+{
+    // Salva o sistema de coordenadas de projeção
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+        // Zera o sistema de coordenadas de projeção
+        glLoadIdentity();
+        // Salva sistema de coordenadas do modelo
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+            // Zera o sistema de coordenadas do modelo
+            glLoadIdentity();
+            //
+            glOrtho(0, l, a, 0, -1.0, 1.0);
+}
+void glEnd2D()
+{
+        glPopMatrix();
+    // Retorna o sistema de coordenadas de proje��o
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    // retonra para a matriz de modelo
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void desenhar_mouse_cursor(int x, int y, int l, int a, double dimensao)
+{
+    glBegin2D(l, a);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_LIGHTING);
+        glTranslated(x, y, 0);
+        glBegin(GL_TRIANGLES);
+            glColor4f(0.0, 0.75, 0.0, 0.75);
+            //glColor3d(0.0, 1.0, 0.0);
+            glVertex2f(0, 0);
+            glVertex2f(0, sqrt(2*dimensao*dimensao));
+            glVertex2f(dimensao, dimensao);
+        glEnd();
+        glEnable(GL_LIGHTING);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+    glEnd2D();
+}
+
 // configura as caracteristicas gerais de visualização
 void configura_visao() {
 
@@ -202,7 +248,7 @@ void configura_visao() {
     //Habilita o uso de iluminação
     glEnable(GL_LIGHTING); // Declara iluminação
     // Habilita o depth-buffering
-    // Faz a luz preencher todo o buffer de pronfundidade e não só o fundo
+    // Faz a luz preencher o buffer de pronfundidade e não só o fundo
     glEnable(GL_DEPTH_TEST);
     // habilita iluminação nas texturas
     // funde a imagem sem textura com a imagem com textura
@@ -351,6 +397,7 @@ void desenha_orbita_circular(CorpoCeleste *astro, double dist)
     // desenha a órbita circular
     if (astro->ativo && !astro->especial && desenha_orbita()) {
         glDisable(GL_LIGHTING);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
         glEnable (GL_BLEND);
         glColor3d (astro->cor[C_R], astro->cor[C_G], astro->cor[C_B]);
         circuloY(90.0, 90.0, dist);
@@ -535,8 +582,8 @@ void desenha_anel_saturno(double r1, double r2, GLubyte *stipple, double gray)
     } else
         glColor4d(gray, gray, gray, 1.0);
 
-    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
     glEnable(GL_POLYGON_STIPPLE);
     glPolygonStipple(stipple);
     gluDisk(quad, r1, r2, 60, 60);
@@ -596,7 +643,7 @@ double desenha_aneis(CorpoCeleste *astro)
             }
         }
     }
-    return astro->raio * 2.05;
+    return astro->raio * FATOR_ANEL_SATURNO;
 }
 
 //desenha orbita linear do asteroide

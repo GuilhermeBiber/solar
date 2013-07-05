@@ -3,11 +3,14 @@
  *
  *  Created on: 08/05/2012
  *      Author: Frederico Sampaio
+ *      Ref: Real-Time Collision Detection, ISBN: 1-55860-732-3
  *      Adaptadop por Gulherme Sampaio (inclusão de novas funções)
  *      O programa é baseado nos fontes disponível em http://www.opengl.org
  */
 
 #include <math.h>
+
+#include "geometria.h"
 
 // Copia vetor l = r
 void cpVet(double l[], double r[]) {
@@ -30,7 +33,7 @@ void subtEsc(double l[], double r[]) {
     l[2] -= r[2];
 }
 
-// Produto vetoral
+// Produto vetoral (Cross)
 // p = v x w
 void prodVet(double p[], double v[], double w[]) {
 	p[0] = (v[1]*w[2]) - (v[2] * w[1]);
@@ -40,7 +43,7 @@ void prodVet(double p[], double v[], double w[]) {
 
 // Cria vetor v baseado nos pontoa A e B
 // v = AB
-void vetorAB(double v[], double A[], double B[]) {
+void vetor(double v[], double A[], double B[]) {
     v[0] = (B[0] - A[0]);
     v[1] = (B[1] - A[1]);
     v[2] = (B[2] - A[2]);
@@ -57,14 +60,16 @@ void multPEsc(double v[], double f) {
 // Divisão por escalar
 // v = v x FATOR
 void divPEsc(double v[], double f) {
-    v[0] /= f;
-    v[1] /= f;
-    v[2] /= f;
+    if (f) {
+        v[0] /= f;
+        v[1] /= f;
+        v[2] /= f;
+    }
 }
 
 // Soma vetorial em v
 // v = v + w
-void vetorAB(double v[], double w[]) {
+void somaVet(double v[], double w[]) {
     v[0] += w[0];
     v[1] += w[1];
     v[2] += w[2];
@@ -77,24 +82,24 @@ double normaVet(double v[]) {
 }
 
 // Distancia entre dois pontos
-double distPontoPQ(double P[],double Q[]) {
+double distPonto(double P[],double Q[]) {
     return sqrt(pow(P[0]-Q[0],2) + pow(P[1]-Q[1],2) + pow(P[2]-Q[2],2));
 }
 
 // produto interno (http://en.wikipedia.org/wiki/Dot_product)
-double prodIntPQ(double P[],double Q[]) {
+double dotVet(double P[],double Q[]) {
     return (P[0] * Q[0] + P[1] * Q[1] + P[2] * Q[2]);
 }
 
 // distancia entre o ponto P e a reta formada pelos pontos Q e R
 // d = ||QP x  QR|| / ||QR||
-double distPontoP_RetaQR(double P[], double Q[], double R[]) {
+double distPontoReta(double P[], double Q[], double R[]) {
 	// vetor v da reta R
 	double v[3];
-	vetorAB(v, Q, R);
+	vetor(v, Q, R);
 	// vetor w de um ponto de r até P
 	double w[3];
-	vetorAB(w, P, Q);
+	vetor(w, P, Q);
 	//  produto vetorial ||QP x QR||
 	double prod[3];
 	prodVet(prod, w, v);
@@ -103,7 +108,7 @@ double distPontoP_RetaQR(double P[], double Q[], double R[]) {
 }
 
 // angulo em Z da reta formada pelos pontos Q e R
-double anguloZRetaQR(double Q[], double R[]) {
+double anguloZReta(double Q[], double R[]) {
     double x0 = Q[0];
     double y0 = Q[1];
     double x1 = R[0];
@@ -114,7 +119,7 @@ double anguloZRetaQR(double Q[], double R[]) {
 // distancia entre o ponto P e o segmento de reta formada pelos pontos Q e R
 // Ref: http://realidadgh.wordpress.com/2013/01/19/
 //      criando-um-sistem-detector-de-colisoes-parte-1-colisao-ponto-poligono/
-double distPontoP_SegmentoQR(double P[], double Q[], double R[])
+double distPontoSegmento(double P[], double Q[], double R[])
 {
     double x = P[0];
     double y = P[1];
@@ -123,7 +128,7 @@ double distPontoP_SegmentoQR(double P[], double Q[], double R[])
     double x1 = R[0];
     double y1 = R[1];
 
-    double theta = anguloZRetaQR(Q, R);
+    double theta = anguloZReta(Q, R);
     double co = cosf(-theta);
     double se = sinf(-theta);
     double z = x * co + y * se;
@@ -131,10 +136,10 @@ double distPontoP_SegmentoQR(double P[], double Q[], double R[])
     double z1 = x1 * co + y1 * se;
 
     if ((z0 < z && z < z1) || (z1 < z && z < z0)) {
-        return distPontoP_RetaQR(P, Q, R);
+        return distPontoReta(P, Q, R);
     } else {
-        double d0 = distPontoPQ(P, Q);
-        double d1 = distPontoPQ(P, R);
+        double d0 = distPonto(P, Q);
+        double d1 = distPonto(P, R);
         if (d0 < d1)
             return d0;
         else
@@ -152,7 +157,7 @@ double noSegmentoQR(double P[], double Q[], double R[])
     double x1 = R[0];
     double y1 = R[1];
 
-    double theta = anguloZRetaQR(Q, R);
+    double theta = anguloZReta(Q, R);
     double co = cosf(-theta);
     double se = sinf(-theta);
     double z = x * co + y * se;
@@ -160,6 +165,45 @@ double noSegmentoQR(double P[], double Q[], double R[])
     double z1 = x1 * co + y1 * se;
 
     return ((z0 < z && z < z1) || (z1 < z && z < z0));
+}
+
+/*
+ * Real-Time Collision Detection
+ * Copyright © 2005 Elsevier Inc. All rights reserved
+ * Author(s): Christer Ericson
+ * ISBN: 978-1-55860-732-3
+ * Publisher's Note: Transferred to Taylor & Francis as of 2012
+ *
+ */
+// Dados três pontos não colineares, calcula a equação do plano
+// em função do vetor normal (ordem ccw) e o deslocamento
+Plano plano(Ponto a, Ponto b, Ponto c)
+{
+    Plano p;
+    Vetor ba, ca;
+    prodVet(ba, b, a);
+    prodVet(ca, c, a);
+    prodVet(p.n, ba, ca);
+    p.d = dotVet(p.n, a);
+    return p;
+}
+
+// verifica se um segmento de reta intercepta um plano
+// e, se existir, retorna o ponto de interceptação q
+int interceptaSegmentoPlano(Ponto a, Ponto b, Plano p, double &t, Ponto &q)
+{
+    // Compute the t value for the directed line ab intersecting the plane
+    Vetor ab; vetor(ab, a, b);
+    t = (p.d - dotVet(p.n, a)) / dotVet(p.n, ab);
+    // If t in [0..1] compute and return intersection point
+    if (t >= 0.0 && t <= 1.0) {
+        cpVet(q, ab);
+        multPEsc(q, t);
+        somaVet(q, a);
+        return 1;
+    }
+    // Else no intersection
+    return 0;
 }
 
 // pseudo code found at:
@@ -170,10 +214,10 @@ void pontoMaisProximo(double Q[], double A[], double B[], double P[], double *t)
 {
     double AB[3]; // AB = B - A;
     cpVet(AB, B); subtEsc(AB, A);
-    double ab_square = prodIntPQ(AB, AB);
+    double ab_square = dotVet(AB, AB);
     double AP[3]; // AP = P - A;
     cpVet(AP, P); subtEsc(AP, A);
-    double ap_dot_ab = prodIntPQ(AP, AB);
+    double ap_dot_ab = dotVet(AP, AB);
     // t is a projection param when we project vector AP onto AB
     *t = ap_dot_ab / ab_square;
     // calculate the closest point

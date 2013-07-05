@@ -9,7 +9,6 @@
 #include <math.h>
 #include <float.h>
 #include <cmath>
-#include <stdio.h>
 
 #include "controle.h"
 #include "modelo.h"
@@ -34,6 +33,8 @@ double direcaoCameraZ = 0.0;
 
 int botaoMouse, estadoBotaoMouse;
 int posXselecionada, posYselecionada;
+int ultima_posMouseX, ultima_posMouseY;
+int largura_tela, altura_tela;
 int posXmouse, posYmouse;
 int id_roda_mouse = 0;
 int altura, largura;
@@ -46,8 +47,8 @@ bool apagado = false;
 double escalaRaio = ESCALA_PADRAO_RAIO;
 double escalaDist = ESCALA_PADRAO_DIST;
 
-double afastamentoMinimo = 0.02;
-double limiteMinimo = afastamentoMinimo / 2.0;
+double afastMinimo = 0.02;
+double limiteMinimo = afastMinimo / 2.0;
 double limiteVolume = 100000.0;
 double rotacao, angulo = 10.0;
 double cameraEmX = 1.0, cameraEmY = 1.0, cameraEmZ = 5.0;
@@ -148,14 +149,14 @@ void inicia_textos()
     t_msg.setColor(verde);
     t_selecionado.setColor(verde);
 
-    t_foco.setPosition(-0.98, 0.95, -1);
-    t_selecionado.setPosition(-0.98, 0.80, -1);
-    t_asteroide.setPosition(-0.98, 0.65, -1);
-    t_msg.setPosition(-0.98, 0.50, -1);
-    t_explosao.setPosition(0.0, 0.95, -1);
-    t_tempo.setPosition(-0.999, -0.85, -1);
-    t_escalas.setPosition(-0.999, -0.95, -1);
-    t_fps.setPosition(0.80, 0.95, -1);
+    t_foco.setPosition(-0.98, 0.95, 0);
+    t_selecionado.setPosition(-0.98, 0.80, 0);
+    t_asteroide.setPosition(-0.98, 0.65, 0);
+    t_msg.setPosition(-0.98, 0.50, 0);
+    t_explosao.setPosition(0.0, 0.95, 0);
+    t_tempo.setPosition(-0.999, -0.85, 0);
+    t_escalas.setPosition(-0.999, -0.95, 0);
+    t_fps.setPosition(0.80, 0.95, 0);
     t_fps.setText("FPS:...");
 }
 
@@ -320,16 +321,14 @@ void dec_distancia(double d)
     distCamera -= d;
     // cuidado, a distância não pode ser negativa e nem deve ser zero!
     // menor e maior distância
-    if (distCamera < (afastamentoMinimo + (em_foco->raio * 1.1))) {
-        distCamera = (afastamentoMinimo + (em_foco->raio * 1.1));
+    if (distCamera < (afastMinimo + (em_foco->raio * 1.1))) {
+        distCamera = (afastMinimo + (em_foco->raio * 1.1));
     } else if (distCamera > trajeto_asteroide) {
         distCamera = trajeto_asteroide;
     }
     // se mudou, atualiza a camera
-    if (dist != distCamera) {
-        pos_camera(cameraLongitude, cameraLatitude);
+    if (dist != distCamera)
         glutPostRedisplay();
-    }
 }
 
 void mudar_foco_para(CorpoCeleste* astro)
@@ -503,7 +502,7 @@ void ativa_asteroide()
     // calcula a trajetórioa linear do asteroide
     UnProject(reta_asteroide[0], reta_asteroide[1], posXmouse, posYmouse);
     // define o vetor de deslocamento da reta da trajetória do asteroide
-    vetorAB(asteroide_vetor, reta_asteroide[0], reta_asteroide[1]);
+    vetor(asteroide_vetor, reta_asteroide[0], reta_asteroide[1]);
     // dividide o vetor pelo tempo de vida do asteroide para que ele percorra
     // no máximo os limites da visão (zFar do gluPerspective)
     multPEsc(asteroide_vetor,  1.0/tempo_asteroide);
@@ -569,7 +568,7 @@ void movimenta_asteroide()
         pos[2] = asteroide_pos[2] + asteroide_vetor[2] * deltaDia;
         // mantém o deslocamento do asteroide em distância máxima
         // para evitar falha na análise de colisão
-        double dist_percorrida = distPontoPQ(asteroide->pos,pos);
+        double dist_percorrida = distPonto(asteroide->pos, pos);
         double precisao = 2 * asteroide->raio;
         if (dist_percorrida > precisao) {
             // após algumas falhas (comum no início),
@@ -592,37 +591,46 @@ void movimenta_asteroide()
         }
         cpVet(asteroide->pos, pos);
         // se o asteroide percorreu toda a área de visão, pode desativá-lo
-        dist_percorrida = distPontoPQ(asteroide->pos, asteroide_pos);
+        dist_percorrida = distPonto(asteroide->pos, asteroide_pos);
         if (dist_percorrida > trajeto_asteroide)
             desativa_asteroide(&sol);
     }
 
 }
 
+/*----------------------------------------------------------------------------
+// controles de seleção por posição do mouse na janela (x,y)
 //----------------------------------------------------------------------------
-// controles de seleção por posição da janela (x,y)
-//----------------------------------------------------------------------------
-// seleção considerando todas as esferas (SOL, planetas e lua)
-// e a distância delas em relação à camera
-// Agradecimento especial no caso ao "Tio Fred" pela ajuda na matemática e
-// na verificação da colisão com os anéis de saturno (pedido no trabalho)
-// Ref: http://www.bfilipek.com/2012/06/select-mouse-opengl.html
-// Ref: http://www.codeproject.com/Articles/35139/Interactive-Techniques-in-Three-dimensional-Scenes
-void _mais_proximo_da_camera(GLdouble camera[3], CorpoCeleste *astro,
+ Seleção considerando todas as esferas (SOL, planetas e lua)
+ e a distância delas em relação à camera
+ Agradecimento especial no caso ao "Tio Fred" pela ajuda na matemática e
+ na verificação da colisão com os anéis de saturno (pedido no trabalho)
+
+ Ref: Interactive Techniques in Three-dimensional Scenes (Part 1):
+      Moving 3D Objects with the Mouse using OpenGL 2.1
+      http://www.codeproject.com/Articles/35139/
+      Interactive-Techniques-in-Three-dimensional-Scenes
+      By Steve Katic, 22 Apr 2009
+
+ Ref: Select + Mouse + OpenGL
+      http://www.bfilipek.com/2012/06/select-mouse-opengl.html
+      Bartlomiej Filipek, 15 June 2012
+*/
+void _mais_proximo_da_camera(CorpoCeleste *astro,
         double *minDist, CorpoCeleste **mais_perto)
 {
     double desloc, prox[3];
     pontoMaisProximo(prox, reta_camera[0], reta_camera[1], astro->pos, &desloc);
     // se o deslocamento está dentro do espaço definido pelo segmento da reta
     if (desloc >= 0 && desloc <= 1) {
-        double dist = distPontoPQ(prox, astro->pos);
-        // se a distância é menor que o raio do objeto (todo são esféricos)
+        double dist = distPonto(prox, astro->pos);
+        // se a distância é menor que o raio do objeto (são esféricos)
         if (dist <= astro->raio) {
             // verifica se a câmera não está dentro do astro
-            double dist3 = distPontoPQ(astro->pos, camera) - afastamentoMinimo;
+            double dist3 = distPonto(astro->pos, reta_camera[0]);
             if (dist3 > astro->raio) {
                 // verifica se o objeto é mais próximo que o atual selecionado
-                if (dist < *minDist) {
+                if (dist3 < *minDist) {
                     // se estiver, muda a seleção
                     *mais_perto = astro;
                     *minDist = dist;
@@ -633,14 +641,26 @@ void _mais_proximo_da_camera(GLdouble camera[3], CorpoCeleste *astro,
     // para cada satélite
     int i;
     for (i = 0; i < astro->satelites; i++) {
-        _mais_proximo_da_camera(camera, &(astro->satelite[i]),
-                minDist, mais_perto);
+        _mais_proximo_da_camera(&(astro->satelite[i]), minDist, mais_perto);
     }
 }
 
 // Pendente
-bool verifica_selecao_anel_saturno(CorpoCeleste *astro)
+bool verifica_selecao_anel_saturno(CorpoCeleste *astro, double *dist)
 {
+    Plano p;
+    p.n[0] = 0.0;
+    p.n[1] = 1.0;
+    p.n[2] = 0.0;
+    p.d = 0.0;
+    double desloc, q[3];
+    double raio_anel = astro->raio * FATOR_ANEL_SATURNO;
+    if(interceptaSegmentoPlano(reta_camera[0], reta_camera[1], p, desloc, q)) {
+        if (distPonto(astro->pos, q) < raio_anel) {
+            *dist = distPonto(reta_camera[0], q) - afastMinimo;
+            return true;
+        }
+    }
     return false;
 }
 
@@ -649,16 +669,21 @@ bool verifica_selecao_anel_saturno(CorpoCeleste *astro)
 // e a distância delas em relação à camera
 CorpoCeleste *seleciona()
 {
-    GLdouble camera[3];
-    posicao_camera(camera);
     double dist = DBL_MAX;
     CorpoCeleste *selecionado = NULL;
-    _mais_proximo_da_camera(camera, &sol, &dist, &selecionado);
-//    if (selecionado == NULL)
-//        if (verifica_selecao_anel_saturno(&(sol.satelite[SATURNO]))) {
-//            informa_selecao((char *)"Anel de saturno");
-//            return NULL;
-//        }
+    _mais_proximo_da_camera(&sol, &dist, &selecionado);
+    // verifica o anel de saturno
+    double distAS;
+    if (verifica_selecao_anel_saturno(&(sol.satelite[SATURNO]), &distAS)) {
+        if(distAS < dist) {
+            informa_selecao((char *)"Anel de saturno");
+            return &(sol.satelite[SATURNO]);
+        }
+    }
+    // ajusta o label de seleção de planeta
+    if (selecionado != NULL)
+        informa_selecao(selecionado->nome);
+
     return selecionado;
 }
 
@@ -690,12 +715,12 @@ CorpoCeleste *verifica_colisao(CorpoCeleste *astro, CorpoCeleste *asteroide)
     if (astro == asteroide)
         return NULL;
 
-    double dist = distPontoPQ(astro->pos, asteroide->pos);
+    double dist = distPonto(astro->pos, asteroide->pos);
 
     // ajsuta a distância de colisão pelo mínimo entre o deslocamento por
     // quadro ou o raio do asteroide
 
-    // se a distância é menor que os raios dos planetas (todo são esféricos)
+    // se a distância é menor que os raios dos planetas (são esféricos)
     if (dist <= (astro->raio + asteroide->raio) && astro->ativo) {
         // Tragédia! Catástrofe! Colisão...
         explode(astro);
@@ -712,15 +737,9 @@ CorpoCeleste *verifica_colisao(CorpoCeleste *astro, CorpoCeleste *asteroide)
 // Agradecimento especial no caso ao "Tio Fred" pela ajuda na matemática
 bool verifica_colisao_anel_saturno(CorpoCeleste *astro)
 {
-    double raio_anel;
-    // guarda o atual falg de renderização
-    bool rend = get_renderizar();
-    // obté o raio do anel na funçãod e customização de saturno
-    renderizar(false);
-    raio_anel = sol.satelite[SATURNO].customizar(&(sol.satelite[SATURNO]));
-    renderizar(rend); // retorna o estado anterior da renderização
+    double raio_anel = sol.satelite[SATURNO].raio * FATOR_ANEL_SATURNO;
     // plano no qual o anel é desenhado
-    //!!! no caso, pode ser dispensada (pois o plano é perpendicular ao eixo Z)
+    //!!! no caso, pode ser dispensada (pois o plano é perpendicular ao eixo Y)
     //double plano[4];
     //plano[0] = 0;
     //plano[1] = 1;
@@ -740,7 +759,7 @@ bool verifica_colisao_anel_saturno(CorpoCeleste *astro)
         // verifica se a distância entre o centro do asteroide
         // e o centro de saturno for menor que o raio do asteroide
         // menos o raio do anel
-        if (distPontoPQ(astro->pos, sol.satelite[SATURNO].pos) <
+        if (distPonto(astro->pos, sol.satelite[SATURNO].pos) <
                 astro->raio + raio_anel) {
             destruir_anel_saturno();
         }
@@ -759,13 +778,10 @@ void continua_explosao(CorpoCeleste *astro)
 // controles do GLUT
 //----------------------------------------------------------------------------
 CorpoCeleste *selecionado = NULL;
-int ultima_posMouseX, ultima_posMouseY;
 
 void calcular()
 {
-    // verifica se o mouse aponta para algum corpo celeste
-    selecionado = seleciona();
-
+    //calcula os frames por segundo
     calculaFPS();
 
     // faz a passagem do tempo
@@ -786,37 +802,28 @@ void calcular()
         explosoes = countExplosions();
     }
 
-    // faz o cálculo da posição da câmera
-    // guarda a posição do mouse
-    ultima_posMouseX = posXmouse;
-    ultima_posMouseY = posYmouse;
-    // posiciona a câmera
-    atualiza_camera();
-    // verifica a inversibilidade da matriz de modelo e, se for inversível,
-    // guarda a matriz inversa par calculos futuros
-    if (!initPickRayDepth()) {
-        mensagem((char *)"Impossivel fazer controle de posicionamento. Favor termine o programa!");
-        return;
-    }
-    // obtem a reta de seleção (pick ray)
-    UnProject(reta_camera[0], reta_camera[1], ultima_posMouseX, ultima_posMouseY);
-    // faz desenho sem renderização apenas para cálculo das posições
+    // Faz desenho sem renderização
+    // apenas para cálculo da posição do astro em foco.
+    // Na mudança de tempo, o astro ficará em posição diferente
+    // do quadro em que ele foi desenhado anteriomente.
+    // Por isso, é feita uma passagem na construção estruturada da cena
+    // para calcular sua posição nesse novo quadro que representa o "dia" atual
     renderizar(false);
     desenhar_sol(&sol);
     renderizar(true);
-    // define a posição da camera e da cena ao final
+
+    // define a posição da camera em relação ao astro em foco
     direcaoCameraX = em_foco->pos[0];
     direcaoCameraY = em_foco->pos[1];
     direcaoCameraZ = em_foco->pos[2];
 
-    // define os textos que serão desenhados
-    if (selecionado != NULL)
-        informa_selecao(selecionado->nome);
     // infoma o dia
     t_tempo.setText("Dia: %f (%f)\n", dia, tempo);
+
     // informa as escalas atuais
     t_escalas.setText("Escalas: Espacial=1/%.2f, Planeta=1/%.2f",
             escalaDist, escalaRaio);
+
     // lida com o asteroide
     if (asteroide->ativo) {
         // informa a atividade
@@ -831,6 +838,7 @@ void calcular()
     } else {
         t_asteroide.setText("");
     }
+
     // informa explosões
     if (explosoes)
         t_explosao.setText("Catrastrofe (%d)!", explosoes);
@@ -838,7 +846,8 @@ void calcular()
         t_explosao.setText("");
     // informa FPS
     t_fps.setText("FPS: %d", fps);
-// informa astro que está no foco da câmera
+
+    // informa astro que está no foco da câmera
     if (em_foco->ativo) {
         t_foco.setText("Em foco: %s", em_foco->nome);
         t_foco.setColor(verde);
@@ -860,8 +869,20 @@ void desenhar()
 
     // posiciona a câmera
     atualiza_camera();
+    // verifica a inversibilidade da matriz de modelo e, se for inversível,
+    // guarda a matriz inversa par calculos futuros
+    if (!initPickRayDepth()) {
+        mensagem((char *)"Impossivel fazer controle de posicionamento. Favor termine o programa!");
+        return;
+    }
+    // obtem a reta de seleção (pick ray)
+    // guarda a posição do mouse nesse momento de seleção
+    ultima_posMouseX = posXmouse;
+    ultima_posMouseY = posYmouse;
+    UnProject(reta_camera[0], reta_camera[1], ultima_posMouseX, ultima_posMouseY);
     // desenha
     desenhar_sol(&sol);
+    selecionado = seleciona();
 
     // desenha os textos
     t_tempo.draw2D();
@@ -873,12 +894,18 @@ void desenhar()
     mostra_selecao();
     mostra_mensagem();
 
+    // desenha a posição do mouse
+    desenhar_mouse_cursor(ultima_posMouseX, ultima_posMouseY,
+            largura_tela, altura_tela, 12.0);
+
     glutSwapBuffers();
 }
 
 void remodelar(int w, int h)
 {
     double angulo = 60.0;
+    largura_tela = w;
+    altura_tela = h;
     double perspectiva = (double)(w)/(double)(h);
     glViewport(0, 0,(GLsizei)w,(GLsizei)h);
     glMatrixMode(GL_PROJECTION);
@@ -1031,7 +1058,6 @@ void move_camera(int x, int y)
     cameraLatitude += (dy * 0.56);
     posXselecionada = x;
     posYselecionada = y;
-    pos_camera(cameraLongitude, cameraLatitude);
     glutPostRedisplay();
 }
 
@@ -1075,6 +1101,8 @@ void mouse(int button, int state, int x, int y)
         }
     } else if(button == GLUT_RIGHT_BUTTON) {
         if(state == GLUT_DOWN) {
+            posXselecionada = x;
+            posYselecionada = y;
             ativa_asteroide();
         } else if(state == GLUT_UP) {
             if (asteroide->ativo)

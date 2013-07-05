@@ -106,7 +106,6 @@ void setPosition(GLdouble pos[3])
 // retona o ponto Q relativo ao modelo baseado em um ponto da imagem (janela)
 void UnProject(GLdouble Q[3], GLdouble R[3], int x, int y)
 {
-
 	GLfloat wx, wy;
 	GLdouble mv[16];		//Modelview matrix
 	GLdouble proj[16];		//Projection matrix
@@ -119,7 +118,6 @@ void UnProject(GLdouble Q[3], GLdouble R[3], int x, int y)
 	wx = (GLfloat)x;
 	wy = (GLfloat)(vp[3] - y);	//inverte o y
 
-    glReadBuffer(GL_BACK);
     // ponto mais próximo: wz = 0
 	gluUnProject(wx, wy, 0, mv, proj, vp, Q, Q+1, Q+2);
 	// ponto mais distante: wz = 1
