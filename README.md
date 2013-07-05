@@ -53,13 +53,11 @@ de um diretório que contenha o subdiretório “texturas” com os bitmaps usad
 
 
 - Mouse:
- - Botão:
-  - Direito: Mover câmera
-  - Esquerdo: Atirar asteroide e também mover câmera
-  - Meio: Surpresinha ;)
- - Rodar botão do meio:
-  - Para frente: Aumenta zoom
-  - Para trás: Diminui zoom
+ - Botão direito: Mover câmera
+ - Botão esquerdo: Atirar asteroide e também mover câmera
+ - Botão meio: Surpresinha ;)
+ - Roda do mouse para frente: Aumenta zoom
+ - Roda do mouse para trás: Diminui zoom
 
 - Setas:
  - Cima: Aumenta zoom
